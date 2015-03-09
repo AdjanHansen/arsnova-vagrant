@@ -37,7 +37,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # the path on the host to the actual folder. The second argument is
   # the path on the guest to mount the folder. And the optional third
   # argument is a set of non-required options.
-  config.vm.synced_folder "./puppet/files", "/etc/puppet/files"
+  synced_folder config, ".", "/vagrant"
+  synced_folder config, "./puppet/files", "/etc/puppet/files"
 
   # Provider-specific configuration so you can fine-tune various
   # backing providers for Vagrant. These expose provider-specific options.
@@ -48,7 +49,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   #   vb.gui = true
   #
      # Use VBoxManage to customize the VM. For example to change memory:
-     vb.customize ["modifyvm", :id, "--memory", "1024"]
+     vb.customize ["modifyvm", :id, "--memory", "2048"]
+     vb.customize ["modifyvm", :id, "--cpus", "4"]
    end
   #
   # View the documentation for the provider you're using for more
@@ -160,5 +162,22 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     production.vm.network "forwarded_port", guest: 10444, host: 10444
     # CouchDB
     production.vm.network "forwarded_port", guest: 5984, host: 5985
+  end
+end
+
+# Defines a synced folder with optimized options for the OS.
+def synced_folder config, host_path, guest_path
+  case RUBY_PLATFORM
+    when /darwin/ then
+      config.vm.synced_folder host_path, guest_path,
+          type: "nfs", :map_uid => 0, :map_gid => 0
+    when /linux/ then
+      config.vm.synced_folder host_path, guest_path,
+          type: "nfs", :map_uid => 0, :map_gid => 0
+    when /mswin|mingw|cygwin/ then
+      config.vm.synced_folder host_path, guest_path,
+          type: "smb"
+    else
+      config.vm.synced_folder host_path, guest_path
   end
 end
